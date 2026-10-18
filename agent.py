@@ -102,6 +102,48 @@ print(f"Average steps over {evaluate_episodes} evaluation episodes: {np.mean(epi
 
 env.close()  # Close the environment after all episodes are completed
 
+# For video recording, uncomment the following code block and ensure you have the required dependencies installed:
+# try:
+#     from gymnasium.wrappers import RecordVideo
+# except ImportError:
+#     print("\nGymnasium video recording not installed. Please install it using 'pip install moviepy'.\n")
+
+# video_env = gym.make(  # Create an environment that produces individual image frames.
+#     "FrozenLake-v1",  
+#     map_name="8x8",  
+#     is_slippery=True,  
+#     render_mode="rgb_array", 
+# ) 
+
+# video_env = RecordVideo(  # Attach recording behavior to the environment.
+#     video_env,  
+#     video_folder="",  
+#     name_prefix=f"frozenlake-agent",
+#     episode_trigger=lambda episode_id: episode_id == 0,  # Record the first episode.
+# )
+
+# state, info = video_env.reset(seed=67) 
+# video_rng = np.random.default_rng(67) 
+# previous_action = None 
+# video_reward = 0.0  
+# finished = False 
+
+# while not finished:  
+#     action = int(np.argmax(q_table[state, :])) 
+
+#     if probability_of_slip > 0 and previous_action is not None:
+#         if video_rng.random() < probability_of_slip:
+#             action = previous_action 
+
+#     state, reward, terminated, truncated, info = video_env.step(action)  
+#     previous_action = action  
+#     video_reward += reward  
+#     finished = terminated or truncated
+
+# video_env.close()
+# print("Recorded episode reward:", video_reward)
+
+
 episode_numbers = range(1, len(episode_rewards) + 1)  # Number the recorded episodes starting at 1.
 
 Path("results").mkdir(exist_ok=True)  # Create results/ if that folder does not already exist.
