@@ -11,6 +11,7 @@ epsilon = 1 # Exploration rate
 gamma = 1 # Discount factor
 alpha = 0.1 # Learning rate
 episodes = 5000 # Number of episodes for training
+probability_of_slip = 0.0 # Probability of momemntum from previous action to override the current action (stochasticity in the environment)
 print(f"Agent is using Exploration rate (epsilon): {epsilon} with decay, Discount factor (gamma): {gamma}, Learning rate (alpha): {alpha} for {episodes} episodes.")
 
 env = gym.make(
@@ -46,9 +47,14 @@ episode_rewards = [] # store the reward for each episode
 for episode in range(episodes):
     state, info = env.reset()  # Reset the environment for each episode
     episode_reward = 0
+    previous_action = None  # Initialize previous action for another source of stochasticity in the environment
 
     while True:
         action = choose_action(state, epsilon * (episodes - episode) / episodes) # Choose an action based on the current state
+        recorded_action = action # Store the actual action taken for logging purposes
+        if previous_action is not None and probability_of_slip > 0: # Check if probability is greater than 0 to preserve random seed
+            if np.random.uniform(0, 1) < probability_of_slip: # Check if momentum randomly ovverrides
+                action = previous_action # Override the current action with the previous action
         next_state, reward, terminated, truncated, info = env.step(action) # Take a step in the environment using the chosen action
         episode_reward += reward
         if terminated and reward == 1:
@@ -58,9 +64,10 @@ for episode in range(episodes):
         target = reward
         if not terminated:
             target += gamma * np.max(q_table[next_state, :]) # Add the discounted maximum future reward if not terminated
-        prev_q_value = q_table[state, action] # Store the previous Q-value for comparison
-        q_table[state, action] = prev_q_value + alpha * (target - prev_q_value) # Update the Q-value for the current state-action pair
+        prev_q_value = q_table[state, recorded_action] # Store the previous Q-value for comparison
+        q_table[state, recorded_action] = prev_q_value + alpha * (target - prev_q_value) # Update the Q-value for the current state-action pair
 
+        previous_action = action # Store the current action as previous action for the next iteration
         state = next_state # Move to the next state
 
         if terminated or truncated: # Check if the episode has ended
@@ -114,9 +121,9 @@ plt.plot(average_episodes, moving_average, label="100-episode moving average")  
 
 plt.xlabel("Training episode")  # x-axis
 plt.ylabel("Total episode reward")  # y-axis
-plt.title("Frozen Lake 8x8: Baseline")  # title
+plt.title("Frozen Lake 8x8: Probability of Slip = 0.0")  # title
 plt.ylim(-0.05, 1.05)  # Leave a little visual space around rewards of 0 and 1.
 plt.legend()  # display legend
 plt.tight_layout()  # Adjust spacing so labels fit within the figure.
-plt.savefig("results/baseline.png", dpi=300)  # Save a high-resolution image for your report.
+plt.savefig("results/probability_of_slip_0.0.png", dpi=300)  # Save a high-resolution image for your report.
 plt.show()  # Open the plot for viewing.
