@@ -70,6 +70,29 @@ for episode in range(episodes):
     if (episode + 1) % episodes == 0: # Print the Q-table every 1000 episodes
         print(f"\n final Q-table:")
         print(q_table) 
+        
+evaluate_episodes = 500 # Number of episodes for evaluation
+print(f"\nEvaluating the agent's performance over {evaluate_episodes} episodes...")
+evaluation_rewards = [] # store the reward for each evaluation episode
+episode_steps = [] # store the number of steps taken in each evaluation episode
+for episode in range(evaluate_episodes):
+    state, info = env.reset()  # Reset the environment for each evaluation episode
+    episode_reward = 0
+    step_count = 0
+    while True:
+        action = np.argmax(q_table[state, :]) # Choose the best action based on the learned Q-table
+        next_state, reward, terminated, truncated, info = env.step(action) # Take a step in the environment using the chosen action
+        episode_reward += reward
+        step_count += 1
+        state = next_state # Move to the next state
+        if terminated or truncated: # Check if the episode has ended
+            evaluation_rewards.append(episode_reward)
+            episode_steps.append(step_count)
+            break
+print(f"Average reward over {episodes} training episodes: {np.mean(episode_rewards)}")
+print(f"Average reward over {evaluate_episodes} evaluation episodes: {np.mean(evaluation_rewards)}")
+print(f"Average steps over {evaluate_episodes} evaluation episodes: {np.mean(episode_steps)}")
+
 env.close()  # Close the environment after all episodes are completed
 
 episode_numbers = range(1, len(episode_rewards) + 1)  # Number the recorded episodes starting at 1.
