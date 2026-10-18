@@ -1,20 +1,17 @@
 try:
     import numpy as np
-except ImportError:
-    print("\nNumPy not installed. Please install it using 'pip install numpy'.\n")
-    raise SystemExit(1)
-
-try:
     import gymnasium as gym
+    import matplotlib.pyplot as plt
+    from pathlib import Path
 except ImportError:
-    print("\nGym not installed. Please install it using 'pip install \"gymnasium[toy-text]\"'.\n")
+    print("\nA dependency was not installed. Please install Gymnasium, NumPy, and Matplotlib using 'pip install numpy matplotlib \"gymnasium[toy-text]\"'.\n")
     raise SystemExit(1)
 
-epsilon = 0.7 # Exploration rate
+epsilon = 1 # Exploration rate
 gamma = 1 # Discount factor
 alpha = 0.1 # Learning rate
-episodes = 10000 # Number of episodes for training
-print(f"Agent is using Exploration rate (epsilon): {epsilon}, Discount factor (gamma): {gamma}, Learning rate (alpha): {alpha} for {episodes} episodes.")
+episodes = 5000 # Number of episodes for training
+print(f"Agent is using Exploration rate (epsilon): {epsilon} with decay, Discount factor (gamma): {gamma}, Learning rate (alpha): {alpha} for {episodes} episodes.")
 
 env = gym.make(
     'FrozenLake-v1',
@@ -32,8 +29,8 @@ q_table = np.zeros((num_states, num_actions)) # initialize the Q-table with zero
 print("Q-table initialized with shape:", q_table.shape)
 np.set_printoptions(precision=4, suppress=True) # Set NumPy print options for better readability
 
-def choose_action(state):
-    if np.random.uniform(0, 1) < epsilon:
+def choose_action(state, updated_epsilon):
+    if np.random.uniform(0, 1) < updated_epsilon:
         action = env.action_space.sample() # Explore: choose a random action
     else:
         action = np.argmax(q_table[state, :]) # Exploit: choose the action with the highest Q-value for the current state
@@ -45,12 +42,15 @@ def print_state_info(episode, reward, terminated):
     if terminated and reward == 1:
         print(f"Episode {episode + 1} terminated: Agent reached the goal!")
 
+episode_rewards = [] # store the reward for each episode
 for episode in range(episodes):
     state, info = env.reset()  # Reset the environment for each episode
+    episode_reward = 0
 
     while True:
-        action = choose_action(state) # Choose an action based on the current state
+        action = choose_action(state, epsilon * (episodes - episode) / episodes) # Choose an action based on the current state
         next_state, reward, terminated, truncated, info = env.step(action) # Take a step in the environment using the chosen action
+        episode_reward += reward
         if terminated and reward == 1:
             print_state_info(episode, reward, terminated) # Print the state when agent reaches the goal
 
@@ -64,9 +64,36 @@ for episode in range(episodes):
         state = next_state # Move to the next state
 
         if terminated or truncated: # Check if the episode has ended
+            episode_rewards.append(episode_reward)
             break
         
-    if (episode + 1) % 1000 == 0: # Print the Q-table every 1000 episodes
-        print(f"\nQ-table after episode {episode + 1}:")
+    if (episode + 1) % episodes == 0: # Print the Q-table every 1000 episodes
+        print(f"\n final Q-table:")
         print(q_table) 
 env.close()  # Close the environment after all episodes are completed
+
+episode_numbers = range(1, len(episode_rewards) + 1)  # Number the recorded episodes starting at 1.
+
+Path("results").mkdir(exist_ok=True)  # Create results/ if that folder does not already exist.
+
+plt.figure(figsize=(10, 4))  # Create a figure measuring 10 by 4 inches.
+plt.plot(episode_numbers, episode_rewards, ".", markersize=2, label="Episode reward")  # Plot each episode as a dot.
+
+window = 100  # Average the results of 100 consecutive episodes at a time.
+moving_average = []  # Store one average for each complete window.
+
+for end in range(window, len(episode_rewards) + 1):  # Move the window's ending position forward.
+    recent_rewards = episode_rewards[end - window:end]  # Extract the preceding 100 episode rewards.
+    moving_average.append(sum(recent_rewards) / window)  # Calculate and store their mean.
+
+average_episodes = range(window, len(episode_rewards) + 1)  # Align each average with its window's final episode.
+plt.plot(average_episodes, moving_average, label="100-episode moving average")  # Overlay the learning trend.
+
+plt.xlabel("Training episode")  # x-axis
+plt.ylabel("Total episode reward")  # y-axis
+plt.title("Frozen Lake 8x8: Baseline")  # title
+plt.ylim(-0.05, 1.05)  # Leave a little visual space around rewards of 0 and 1.
+plt.legend()  # display legend
+plt.tight_layout()  # Adjust spacing so labels fit within the figure.
+plt.savefig("results/baseline.png", dpi=300)  # Save a high-resolution image for your report.
+plt.show()  # Open the plot for viewing.
