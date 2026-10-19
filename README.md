@@ -3,11 +3,13 @@
 
 Follows the Assignment 2 Instructions which go through requirements for building and evaluating a Q-Learning Agent
 
+
 Summary:
 - Frozen Lake was selected
 - Modified Epsilon, Gamma, Alpha to alter agent performance
 - Conducted tests to find the best performing agent
 - Added noise(stochasticity) to the environment
+
 
 Directory:
 - results\                      contains images from different tests
@@ -16,6 +18,8 @@ Directory:
 - inspect_frozen_lake.py        script for understanding Frozen Lake enviroment
 - CPSC4420_HW2_F26.pdf          Assignment directions
 - frozenlake-agent-episode-0    video of an episode of the trained agent. Created by agent.py
+- CPSC4420_HW2_F26-1.pdf        Assignment directions
+
 
 Environment:
 - conda was used as the package manager for this project for python 3.11
